@@ -33,7 +33,7 @@ def getHashedPassWithBcrypt(rawpass, saltstr=None):
     return bcrypt.hashpw(rawpass, saltstr)
 
 
-_encryptway = {"NOPASSWORD": lambda: True,
+_encryptway = {"NOPASSWORD": lambda x, y: True,
                "BCRYPT": getHashedPassWithBcrypt,
                "MD5": getHashedPass,
                "SHA256": getHashedPass,
@@ -81,3 +81,8 @@ def matchTheGuessPass(word, hashstr):
         match = hashfunc(word, hashstr)
 
     return [match, hashedway]
+
+
+if __name__ == "__main__":
+    result = matchTheGuessPass("haha", "")
+    print(result)
