@@ -2,12 +2,12 @@ import crypt
 import bcrypt
 
 
-_prefixMapHashway = {"$2a": "BCRYPT",
-                     "$2b": "BCRYPT",
-                     "$2y": "BCRYPT",
-                     "$1": "MD5",
-                     "$5": "SHA256",
-                     "$6": "SHA512"}
+_prefixMapHashway = {b"$2a": "BCRYPT",
+                     b"$2b": "BCRYPT",
+                     b"$2y": "BCRYPT",
+                     b"$1": "MD5",
+                     b"$5": "SHA256",
+                     b"$6": "SHA512"}
 
 
 def getHashedPass(rawpass, saltstr=None):
@@ -16,10 +16,15 @@ def getHashedPass(rawpass, saltstr=None):
     If bcrypt use getHashedPassWithBcrypt function.
     """
     if saltstr is None:
-        "TODO: generate the saltstr"
-        pass
+        raise IOError
 
-    return crypt.crypt(rawpass, saltstr)
+    li = saltstr.split(b'$')
+    if len(li) != 4:
+        raise IOError
+    salt = b'$'.join(li[0:3])
+
+    hashed = crypt.crypt(rawpass.decode("utf-8"), salt.decode("utf-8"))
+    return hashed == saltstr.decode("utf-8")
 
 
 def getHashedPassWithBcrypt(rawpass, saltstr=None):
@@ -27,10 +32,10 @@ def getHashedPassWithBcrypt(rawpass, saltstr=None):
     return the hashed value with bcrypt pasword.
     """
     if saltstr is None:
-        # TODO: generate the salt.
-        pass
+        raise IOError
 
-    return bcrypt.hashpw(rawpass, saltstr)
+    hashed = bcrypt.hashpw(rawpass, saltstr)
+    return hashed == saltstr
 
 
 _encryptway = {"NOPASSWORD": lambda x, y: True,
@@ -65,9 +70,9 @@ def matchTheGuessPass(word, hashstr):
     """Check whether the word is the password that match the hashstr. PS: the
     hashstr is hashed value at /etc/shadow at linux system, 2nd column.
 
-    :word: A string that's a word which will be used to do hash check, whether
-    it's the correct password.
-    :hashstr: the hashed string which means the encrpted password at
+    :word: A bytes that's a word which will be used to do hash check, whether
+    it's the correct password. Such as b'Kerry.li3'
+    :hashstr: the hashed bytes which means the encrpted password at
     /etc/shadow.
     :returns: A list. list[0]: True means match, then list[1] is the hash
     function str, it can be "SHA1", "SHA256", "SHA512", "BCRYPT" etc.
@@ -75,6 +80,7 @@ def matchTheGuessPass(word, hashstr):
 
     """
     match = False
+    # The input word and hashstr should be bytes type, such as b"Kerry.li3"
     hashedway = _getHashedWay(hashstr)
     hashfunc = _encryptway.get(hashedway)
     if hashfunc is not None:
@@ -82,7 +88,17 @@ def matchTheGuessPass(word, hashstr):
 
     return [match, hashedway]
 
-
+# The test for this module.
 if __name__ == "__main__":
-    result = matchTheGuessPass("haha", "")
+    result = matchTheGuessPass(b"haha", b"   ")
+    print(result)
+    result = matchTheGuessPass(b"Kerry.li3",
+                               b'$2a$10$.qVLR3WBnv/JCK8UkHLnBe/UomaZfNZMMZ.Z8RCWoqVtJIyVUDBtC')
+    print(result)
+    result = matchTheGuessPass(b"Changeme_123",
+                               b'$2a$10$.qVLR3WBnv/JCK8UkHLnBe/UomaZfNZMMZ.Z8RCWoqVtJIyVUDBtC')
+    print(result)
+
+    result = matchTheGuessPass(b"Kerry.li3",
+                               b'$6$sjrB9umH$0SCIjGiD4TfpYgdWyjmLUO7kQa/E6un9vX7aSy7XiWg3WHv6rnZRFYqYoHF8QKidtvw1J80YD81rJKbZ2yCdy1')
     print(result)
