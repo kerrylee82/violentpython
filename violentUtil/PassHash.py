@@ -88,6 +88,37 @@ def matchTheGuessPass(word, hashstr):
 
     return [match, hashedway]
 
+
+def testMatchByDictionary(dictFilepath, hashedPass):
+    """hashPass is a hashed value such as '$2a$10$.qVLR3WBnv/JCK8UkHLnBe/UomaZfNZMMZ.Z8RCWoqVtJIyVUDBtC'
+
+    :dictFilepath: A path string to the dictionary file. Will open and read the
+    file line by line to fetch the guessed password.
+    :hashedPass: A string or a bytes of hashed password.
+    :returns: [True, password] or [False, None]
+
+    """
+    isinstance(hashedPass, str)
+    if isinstance(hashedPass, str):
+        hashedPass = hashedPass.encode()
+    elif isinstance(hashedPass, bytes):
+        pass
+    else:
+        raise IOError
+
+    # open the filePath to do check
+    with open(dictFilepath, mode='r') as f:
+        for word in f:
+            word = word.strip('\n')
+            if isinstance(word, str):
+                word = word.encode()
+            result = matchTheGuessPass(word, hashedPass)
+            if result[0]:
+                return [result[0], word.decode("utf-8")]
+
+    return [False, None]
+
+
 # The test for this module.
 if __name__ == "__main__":
     result = matchTheGuessPass(b"haha", b"   ")
